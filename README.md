@@ -15,6 +15,24 @@ No dependencies, no installer — just compile and run.
 
 ---
 
+## Screenshots
+
+![Mines](preview/mines.png)
+
+<details>
+<summary>Options & Language</summary>
+
+<br>
+
+<table align="center"><tr>
+<td align="center" valign="middle"><img src="preview/options.png" alt="Options"></td>
+<td align="center" valign="middle"><img src="preview/language.png" alt="Language"></td>
+</tr></table>
+
+</details>
+
+---
+
 ## Features
 
 - Fully resizable and maximizable window — cells scale dynamically to fit
