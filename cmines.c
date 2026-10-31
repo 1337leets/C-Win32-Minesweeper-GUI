@@ -22,7 +22,7 @@
 #define IDC_OK_BTN      304
 #define IDC_CANCEL_BTN  305
 
-/* ── Oyun durumu (varsayılanlar) ─────────────────────────────────────── */
+/* ── Game state (defaults) ─────────────────────────────────────── */
 static int ROWS  = 9;
 static int COLS  = 9;
 static int MINES = 10;
@@ -39,7 +39,7 @@ static bool g_game_over   = false;
 static HWND mainWindow;
 static HINSTANCE hInst;
 
-/* ── Yerelleştirme ───────────────────────────────────────────────────── */
+/* ── Localization ───────────────────────────────────────────────────── */
 typedef struct { const wchar_t *key, *tr, *en; } StrEntry;
 
 static const StrEntry str_table[] = {
@@ -104,21 +104,21 @@ static void load_settings(void) {
     RegCloseKey(hk);
 }
 
-/* ── İleri bildirimler ───────────────────────────────────────────────── */
+/* ── Forward declarations ───────────────────────────────────────────────── */
 LRESULT CALLBACK ButtonProc(HWND, UINT, WPARAM, LPARAM);
 void rebuild_game_window(void);
 void update_menu(void);
 void init_game(void);
 void reveal_cell(int r, int c);
 
-/* ── Yardımcılar ─────────────────────────────────────────────────────── */
+/* ── Helpers ─────────────────────────────────────────────────────── */
 static void idx_from_id(int id, int *r, int *c) {
     int idx = id - BASE_ID;
     *r = idx / COLS;
     *c = idx % COLS;
 }
 
-/* ── Oyun mantığı ────────────────────────────────────────────────────── */
+/* ── Game logic ────────────────────────────────────────────────────── */
 static void place_mines_randomly(void) {
     for (int r = 0; r < ROWS; r++)
         for (int c = 0; c < COLS; c++)
@@ -223,7 +223,7 @@ void reveal_cell(int r, int c) {
     check_win();
 }
 
-/* ── Menü ─────────────────────────────────────────────────────────────── */
+/* ── Menu ─────────────────────────────────────────────────────────────── */
 static HMENU create_menu(void) {
     HMENU hMenu    = CreateMenu();
     HMENU hGame    = CreatePopupMenu();
@@ -260,7 +260,7 @@ LRESULT CALLBACK SettingsDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
         int y = 15, lw = 160, ew = 55, eh = 22, gap = 34;
         HFONT hf = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
 
-        /* Satır */
+        /* Rows */
         HWND h;
         h = CreateWindowW(L"STATIC", S(L"lbl_rows"), WS_CHILD|WS_VISIBLE, 10, y+2, lw, 20, hwnd, NULL, hInst, NULL);
         SendMessageW(h, WM_SETFONT, (WPARAM)hf, FALSE);
@@ -268,14 +268,14 @@ LRESULT CALLBACK SettingsDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
         SendMessageW(h, WM_SETFONT, (WPARAM)hf, FALSE);
         y += gap;
 
-        /* Sütun */
+        /* Columns */
         h = CreateWindowW(L"STATIC", S(L"lbl_cols"), WS_CHILD|WS_VISIBLE, 10, y+2, lw, 20, hwnd, NULL, hInst, NULL);
         SendMessageW(h, WM_SETFONT, (WPARAM)hf, FALSE);
         h = CreateWindowW(L"EDIT", L"", WS_CHILD|WS_VISIBLE|WS_BORDER|ES_NUMBER, 175, y, ew, eh, hwnd, (HMENU)(intptr_t)IDC_COLS_EDIT, hInst, NULL);
         SendMessageW(h, WM_SETFONT, (WPARAM)hf, FALSE);
         y += gap;
 
-        /* Mayın */
+        /* Mines */
         h = CreateWindowW(L"STATIC", S(L"lbl_mines"), WS_CHILD|WS_VISIBLE, 10, y+2, lw, 20, hwnd, NULL, hInst, NULL);
         SendMessageW(h, WM_SETFONT, (WPARAM)hf, FALSE);
         h = CreateWindowW(L"EDIT", L"", WS_CHILD|WS_VISIBLE|WS_BORDER|ES_NUMBER, 175, y, ew, eh, hwnd, (HMENU)(intptr_t)IDC_MINES_EDIT, hInst, NULL);
@@ -288,7 +288,7 @@ LRESULT CALLBACK SettingsDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
         h = CreateWindowW(L"BUTTON", S(L"cancel"), WS_CHILD|WS_VISIBLE|BS_PUSHBUTTON,    140, y, 85, 28, hwnd, (HMENU)(intptr_t)IDC_CANCEL_BTN, hInst, NULL);
         SendMessageW(h, WM_SETFONT, (WPARAM)hf, FALSE);
 
-        /* Mevcut değerleri doldur */
+        /* Fill current values */
         wchar_t buf[8];
         swprintf(buf, 8, L"%d", ROWS);  SetDlgItemTextW(hwnd, IDC_ROWS_EDIT,  buf);
         swprintf(buf, 8, L"%d", COLS);  SetDlgItemTextW(hwnd, IDC_COLS_EDIT,  buf);
@@ -356,14 +356,14 @@ static void show_settings_dialog(void) {
     }
 }
 
-/* ── Pencere yeniden oluşturma ───────────────────────────────────────── */
+/* ── Window rebuild ───────────────────────────────────────── */
 void rebuild_game_window(void) {
-    /* Eski butonları yok et */
+    /* Destroy old buttons */
     for (int r = 0; r < MAX_ROWS; r++)
         for (int c = 0; c < MAX_COLS; c++)
             if (buttons[r][c]) { DestroyWindow(buttons[r][c]); buttons[r][c] = NULL; }
 
-    /* Yeni boyutu hesapla: istemci alanı COLS×CELL_SIZE + 16 kenar boşluğu */
+    /* New size: client area COLS×CELL_SIZE + 16 margin */
     RECT rc = {0, 0, COLS * CELL_SIZE + 16, ROWS * CELL_SIZE + 16};
     AdjustWindowRectEx(&rc,
         WS_OVERLAPPEDWINDOW & ~WS_MAXIMIZEBOX & ~WS_THICKFRAME, TRUE, 0);
@@ -372,7 +372,7 @@ void rebuild_game_window(void) {
         wr.left, wr.top, rc.right - rc.left, rc.bottom - rc.top,
         SWP_NOZORDER);
 
-    /* Yeni butonları oluştur */
+    /* Create new buttons */
     for (int r = 0; r < ROWS; r++) {
         for (int c = 0; c < COLS; c++) {
             int id = BASE_ID + r * COLS + c;
@@ -391,7 +391,7 @@ void rebuild_game_window(void) {
     InvalidateRect(mainWindow, NULL, TRUE);
 }
 
-/* ── Buton alt sınıfı (sağ tık bayrak) ──────────────────────────────── */
+/* ── Button subclass (right-click flag) ──────────────────────────────── */
 LRESULT CALLBACK ButtonProc(HWND hwndBtn, UINT msg, WPARAM wParam, LPARAM lParam) {
     if (msg == WM_RBUTTONUP) {
         int id = GetDlgCtrlID(hwndBtn);
@@ -413,7 +413,7 @@ LRESULT CALLBACK ButtonProc(HWND hwndBtn, UINT msg, WPARAM wParam, LPARAM lParam
     return DefWindowProcW(hwndBtn, msg, wParam, lParam);
 }
 
-/* ── Ana pencere yordamı ─────────────────────────────────────────────── */
+/* ── Main window procedure ─────────────────────────────────────────────── */
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
     case WM_COMMAND: {
@@ -452,11 +452,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         /* Metin */
         wchar_t buf[8] = L"";
         GetWindowTextW(dis->hwndItem, buf, 8);
-        if (buf[0] == L'\0') return TRUE;   /* boş, çizme */
+        if (buf[0] == L'\0') return TRUE;   /* empty, nothing to draw */
 
         SetBkMode(dis->hDC, TRANSPARENT);
 
-        /* Renk: bayrak kırmızı, rakamlar klasik renklerde */
+        /* Color: red flag, digits in the classic colors */
         COLORREF col = RGB(0,0,0);
         if (flagged[r][c] && !revealed[r][c]) {
             col = RGB(200,0,0);
@@ -469,7 +469,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             int n = neigh[r][c];
             if (n >= 1 && n <= 8) col = numColors[n];
         } else {
-            /* Mayın veya devre dışı */
+            /* Mine or disabled */
             col = RGB(60,60,60);
         }
 
@@ -493,13 +493,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     return 0;
 }
 
-/* ── Giriş noktası ───────────────────────────────────────────────────── */
+/* ── Entry point ───────────────────────────────────────────────────── */
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrev, PWSTR pCmd, int nCmdShow) {
     hInst = hInstance;
     srand((unsigned)time(NULL));
-    load_settings();   /* kayıtlı ayarları oku */
+    load_settings();   /* read saved settings */
 
-    /* Ana pencere sınıfı */
+    /* Main window class */
     WNDCLASSW wc = {0};
     wc.lpfnWndProc   = WndProc;
     wc.hInstance     = hInstance;
@@ -508,7 +508,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrev, PWSTR pCmd, int nCmdSh
     wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
     RegisterClassW(&wc);
 
-    /* Ayarlar dialog sınıfı */
+    /* Settings dialog class */
     WNDCLASSW wcs = {0};
     wcs.lpfnWndProc   = SettingsDlgProc;
     wcs.hInstance     = hInstance;
@@ -517,7 +517,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrev, PWSTR pCmd, int nCmdSh
     wcs.hCursor       = LoadCursor(NULL, IDC_ARROW);
     RegisterClassW(&wcs);
 
-    /* Başlangıç pencere boyutu (menü çubuğu dahil) */
+    /* Initial window size (menu bar included) */
     RECT rc = {0, 0, COLS * CELL_SIZE + 16, ROWS * CELL_SIZE + 16};
     AdjustWindowRectEx(&rc,
         WS_OVERLAPPEDWINDOW & ~WS_MAXIMIZEBOX & ~WS_THICKFRAME, TRUE, 0);
@@ -531,7 +531,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrev, PWSTR pCmd, int nCmdSh
 
     SetMenu(mainWindow, create_menu());
 
-    /* Buton dizisini sıfırla ve oluştur */
+    /* Clear and create the button array */
     for (int r = 0; r < MAX_ROWS; r++)
         for (int c = 0; c < MAX_COLS; c++)
             buttons[r][c] = NULL;

@@ -8,8 +8,8 @@
 /* ── Constants (Sabitler) ─────────────────────────────────────────────── */
 #define MAX_ROWS   30
 #define MAX_COLS   30
-#define MIN_CELL   12     /* minimum cell pixel size (minimum hücre piksel boyutu) */
-#define DEF_CELL   36     /* default cell size for initial window sizing (varsayılan hücre boyutu) */
+#define MIN_CELL   12     /* minimum cell pixel size */
+#define DEF_CELL   36     /* default cell size for initial window sizing */
 #define BASE_ID    1000
 
 #define IDM_NEW_GAME   2001
@@ -23,13 +23,13 @@
 #define IDC_OK_BTN      304
 #define IDC_CANCEL_BTN  305
 
-/* ── Game state defaults (Oyun durumu varsayılanları) ────────────────── */
+/* ── Game state defaults ────────────────── */
 static int ROWS  = 9;
 static int COLS  = 9;
 static int MINES = 10;
 static int lang  = 1;   /* 0 = TR, 1 = EN */
 
-/* current dynamic cell size — updated by relayout() (dinamik hücre boyutu) */
+/* current dynamic cell size — updated by relayout() */
 static int cell_size = DEF_CELL;
 
 static bool mines_grid[MAX_ROWS][MAX_COLS];
@@ -43,7 +43,7 @@ static bool g_game_over   = false;
 static HWND mainWindow;
 static HINSTANCE hInst;
 
-/* ── Localization (Yerelleştirme) ─────────────────────────────────────── */
+/* ── Localization ─────────────────────────────────────── */
 typedef struct { const wchar_t *key, *tr, *en; } StrEntry;
 
 static const StrEntry str_table[] = {
@@ -74,7 +74,7 @@ static const wchar_t *S(const wchar_t *key) {
     return key;
 }
 
-/* ── Registry persistence (Kayıt defteri kalıcılığı) ─────────────────── */
+/* ── Registry persistence ─────────────────── */
 #define REG_KEY L"Software\\MinesGame"
 
 static void save_settings(void) {
@@ -107,7 +107,7 @@ static void load_settings(void) {
     RegCloseKey(hk);
 }
 
-/* ── Forward declarations (İleri bildirimler) ────────────────────────── */
+/* ── Forward declarations ────────────────────────── */
 LRESULT CALLBACK ButtonProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK SettingsDlgProc(HWND, UINT, WPARAM, LPARAM);
 void rebuild_buttons(void);
@@ -117,14 +117,14 @@ void init_game(void);
 void reveal_cell(int r, int c);
 static HMENU create_menu(void);
 
-/* ── Helper: grid index from control ID (kimlikten ızgara indeksi) ───── */
+/* ── Helper: grid index from control ID ───── */
 static void idx_from_id(int id, int *r, int *c) {
     int idx = id - BASE_ID;
     *r = idx / COLS;
     *c = idx % COLS;
 }
 
-/* ── Mine placement & neighbor count (Mayın yerleştirme ve komşu sayısı) */
+/* ── Mine placement & neighbor count */
 static void place_mines_randomly(void) {
     for (int r = 0; r < ROWS; r++)
         for (int c = 0; c < COLS; c++)
@@ -151,7 +151,7 @@ static void compute_neighbors(void) {
         }
 }
 
-/* ── Game init (Oyun başlatma) ───────────────────────────────────────── */
+/* ── Game init ───────────────────────────────────────── */
 void init_game(void) {
     revealedCount = 0;
     g_game_over   = false;
@@ -229,7 +229,7 @@ void reveal_cell(int r, int c) {
     check_win();
 }
 
-/* ── Layout engine (Düzen motoru) ────────────────────────────────────── */
+/* ── Layout engine ────────────────────────────────────── */
 /*
  * Called every time the client area changes size (WM_SIZE).
  * Picks the largest square cell that fits, centers the grid,
@@ -237,41 +237,37 @@ void reveal_cell(int r, int c) {
  *
  * Surplus space around the grid shows as the black background
  * (similar to Windows 7 Minesweeper behavior).
- *
- * (Her boyut değişiminde çağrılır. En büyük kare hücreyi seçer,
- *  ızgarayı ortalar ve tüm butonları toplu taşır. Fazla alan
- *  siyah arka plan olarak görünür — Win7 Minesweeper gibi.)
  */
 void relayout(int clientW, int clientH) {
     if (!mainWindow) return;
 
-    /* Largest square cell fitting both dimensions (her iki eksene sığan en büyük kare) */
+    /* Largest square cell fitting both dimensions */
     int cs = clientW / COLS;
     if (clientH / ROWS < cs) cs = clientH / ROWS;
     if (cs < MIN_CELL) cs = MIN_CELL;
     cell_size = cs;
 
-    /* Center the grid (ızgarayı ortala) */
+    /* Center the grid */
     int ox = (clientW  - COLS * cs) / 2;
     int oy = (clientH  - ROWS * cs) / 2;
     if (ox < 0) ox = 0;
     if (oy < 0) oy = 0;
 
-    /* Batch-reposition (toplu yeniden konumlandır) */
+    /* Batch-reposition */
     HDWP hdwp = BeginDeferWindowPos(ROWS * COLS);
     for (int r = 0; r < ROWS; r++)
         for (int c = 0; c < COLS; c++)
             if (buttons[r][c])
                 hdwp = DeferWindowPos(hdwp, buttons[r][c], NULL,
                     ox + c * cs, oy + r * cs,
-                    cs - 1, cs - 1,   /* 1-px gap between cells (hücreler arası 1 piksel boşluk) */
+                    cs - 1, cs - 1,   /* 1-px gap between cells */
                     SWP_NOZORDER | SWP_NOACTIVATE);
     EndDeferWindowPos(hdwp);
 
     InvalidateRect(mainWindow, NULL, TRUE);
 }
 
-/* ── Menu (Menü) ─────────────────────────────────────────────────────── */
+/* ── Menu ─────────────────────────────────────────────────────── */
 static HMENU create_menu(void) {
     HMENU hBar     = CreateMenu();
     HMENU hGame    = CreatePopupMenu();
@@ -297,7 +293,7 @@ void update_menu(void) {
     DrawMenuBar(mainWindow);
 }
 
-/* ── Settings dialog (Ayarlar diyaloğu) ─────────────────────────────── */
+/* ── Settings dialog ─────────────────────────────── */
 static bool g_dlg_done = false, g_dlg_confirmed = false;
 static int  g_new_rows, g_new_cols, g_new_mines;
 
@@ -336,7 +332,7 @@ LRESULT CALLBACK SettingsDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
             140, y, 85, 28, hwnd, (HMENU)(intptr_t)IDC_CANCEL_BTN, hInst, NULL);
         SendMessageW(h, WM_SETFONT, (WPARAM)hf, FALSE);
 
-        /* Fill current values (mevcut değerleri doldur) */
+        /* Fill current values */
         wchar_t buf[8];
         swprintf(buf, 8, L"%d", ROWS);  SetDlgItemTextW(hwnd, IDC_ROWS_EDIT,  buf);
         swprintf(buf, 8, L"%d", COLS);  SetDlgItemTextW(hwnd, IDC_COLS_EDIT,  buf);
@@ -394,20 +390,20 @@ static void show_settings_dialog(void) {
         ROWS = g_new_rows; COLS = g_new_cols; MINES = g_new_mines;
         save_settings();
         rebuild_buttons();
-        /* Re-run layout with current client size (mevcut boyutuyla düzenle) */
+        /* Re-run layout with current client size */
         RECT cr; GetClientRect(mainWindow, &cr);
         relayout(cr.right, cr.bottom);
     }
 }
 
-/* ── Button (re)creation (Buton oluşturma/yeniden oluşturma) ─────────── */
+/* ── Button (re)creation ─────────── */
 void rebuild_buttons(void) {
-    /* Destroy old buttons (eski butonları yok et) */
+    /* Destroy old buttons */
     for (int r = 0; r < MAX_ROWS; r++)
         for (int c = 0; c < MAX_COLS; c++)
             if (buttons[r][c]) { DestroyWindow(buttons[r][c]); buttons[r][c] = NULL; }
 
-    /* Create new grid — positions are set later by relayout() (konumlar relayout tarafından ayarlanır) */
+    /* Create new grid — positions are set later by relayout() */
     for (int r = 0; r < ROWS; r++)
         for (int c = 0; c < COLS; c++) {
             int id = BASE_ID + r * COLS + c;
@@ -423,7 +419,7 @@ void rebuild_buttons(void) {
     init_game();
 }
 
-/* ── Right-click subclass for flag toggling (Bayrak için sağ-tık alt sınıfı) */
+/* ── Right-click subclass for flag toggling */
 LRESULT CALLBACK ButtonProc(HWND hwndBtn, UINT msg, WPARAM wParam, LPARAM lParam) {
     if (msg == WM_RBUTTONUP) {
         int id = GetDlgCtrlID(hwndBtn);
@@ -445,11 +441,11 @@ LRESULT CALLBACK ButtonProc(HWND hwndBtn, UINT msg, WPARAM wParam, LPARAM lParam
     return DefWindowProcW(hwndBtn, msg, wParam, lParam);
 }
 
-/* ── Main window procedure (Ana pencere yordamı) ─────────────────────── */
+/* ── Main window procedure ─────────────────────── */
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
 
-    /* Resize: recalculate cell size and reposition grid (yeniden boyutlandırma) */
+    /* Resize: recalculate cell size and reposition grid */
     case WM_SIZE:
         if (wParam != SIZE_MINIMIZED)
             relayout(LOWORD(lParam), HIWORD(lParam));
@@ -465,8 +461,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         break;
     }
 
-    /* Dark background outside the grid — Win7 Minesweeper style
-       (ızgara dışında koyu arka plan, Win7 Minesweeper gibi) */
+    /* Dark background outside the grid — Win7 Minesweeper style */
     case WM_ERASEBKGND: {
         RECT cr; GetClientRect(hwnd, &cr);
         FillRect((HDC)wParam, &cr, (HBRUSH)GetStockObject(BLACK_BRUSH));
@@ -498,7 +493,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             return DefWindowProcW(hwnd, msg, wParam, lParam);
         int r = idx / COLS, c = idx % COLS;
 
-        /* Cell background (hücre arka planı) */
+        /* Cell background */
         HBRUSH br = CreateSolidBrush(revealed[r][c] ? RGB(192,192,192) : RGB(220,220,220));
         FillRect(dis->hDC, &dis->rcItem, br);
         DeleteObject(br);
@@ -507,34 +502,34 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         DrawEdge(dis->hDC, &dis->rcItem,
             (dis->itemState & ODS_SELECTED) ? BDR_SUNKENINNER : BDR_RAISEDINNER, BF_RECT);
 
-        /* Text (metin) — skip if empty (boşsa atla) */
+        /* Text, skip if empty */
         wchar_t buf[8] = L"";
         GetWindowTextW(dis->hwndItem, buf, 8);
         if (buf[0] == L'\0') return TRUE;
 
         SetBkMode(dis->hDC, TRANSPARENT);
 
-        /* Classic Minesweeper digit colors (klasik sayı renkleri) */
+        /* Classic Minesweeper digit colors */
         static const COLORREF numColors[] = {
             0,
             RGB(0,   0, 200),  /* 1 – blue (mavi) */
-            RGB(0, 130,   0),  /* 2 – green (yeşil) */
-            RGB(200,  0,   0), /* 3 – red (kırmızı) */
+            RGB(0, 130,   0),  /* 2 – green */
+            RGB(200,  0,   0), /* 3 – red */
             RGB(0,   0, 130),  /* 4 – dark blue (koyu mavi) */
-            RGB(130,  0,   0), /* 5 – dark red (koyu kırmızı) */
-            RGB(0,  130, 130), /* 6 – teal (camgöbeği) */
+            RGB(130,  0,   0), /* 5 – dark red */
+            RGB(0,  130, 130), /* 6 – teal */
             RGB(80,  80,  80), /* 7 – dark grey (koyu gri) */
             RGB(80,  80,  80), /* 8 – dark grey (koyu gri) */
         };
 
         COLORREF col;
         if (flagged[r][c] && !revealed[r][c]) {
-            col = RGB(200, 0, 0);                   /* flag: red (bayrak: kırmızı) */
+            col = RGB(200, 0, 0);                   /* flag: red */
         } else if (revealed[r][c] && !mines_grid[r][c]) {
             int n = neigh[r][c];
             col = (n >= 1 && n <= 8) ? numColors[n] : RGB(0, 0, 0);
         } else {
-            col = RGB(60, 60, 60);                  /* mine / disabled (mayın / devre dışı) */
+            col = RGB(60, 60, 60);                  /* mine / disabled */
         }
 
         HFONT hf  = (HFONT)SendMessageW(dis->hwndItem, WM_GETFONT, 0, 0);
@@ -552,22 +547,22 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     return 0;
 }
 
-/* ── Entry point (Giriş noktası) ─────────────────────────────────────── */
+/* ── Entry point ─────────────────────────────────────── */
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrev, PWSTR pCmd, int nCmdShow) {
     hInst = hInstance;
     srand((unsigned)time(NULL));
     load_settings();
 
-    /* Register main window class (ana pencere sınıfını kaydet) */
+    /* Register main window class */
     WNDCLASSW wc = {0};
     wc.lpfnWndProc   = WndProc;
     wc.hInstance     = hInstance;
     wc.lpszClassName = L"MSimpleClass";
-    wc.hbrBackground = NULL;   /* WM_ERASEBKGND handles background (arka planı biz çiziyoruz) */
+    wc.hbrBackground = NULL;   /* WM_ERASEBKGND handles background */
     wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
     RegisterClassW(&wc);
 
-    /* Register settings dialog class (ayarlar diyaloğu sınıfını kaydet) */
+    /* Register settings dialog class */
     WNDCLASSW wcs = {0};
     wcs.lpfnWndProc   = SettingsDlgProc;
     wcs.hInstance     = hInstance;
@@ -579,26 +574,25 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrev, PWSTR pCmd, int nCmdSh
     /*
      * Compute initial window size from DEF_CELL, then clamp to the OS work area
      * so large grids (e.g. 30x30) don't start off-screen, and center on screen.
-     * (Başlangıç boyutunu hesapla, görev çubuğu hariç çalışma alanına sığdır, ortala.)
      */
-    DWORD winStyle = WS_OVERLAPPEDWINDOW;   /* resizable + maximizable (boyutlandırılabilir + büyütülebilir) */
+    DWORD winStyle = WS_OVERLAPPEDWINDOW;   /* resizable + maximizable */
 
     RECT wa;
     SystemParametersInfoW(SPI_GETWORKAREA, 0, &wa, 0);
     int wa_w = wa.right - wa.left;
     int wa_h = wa.bottom - wa.top;
 
-    /* Desired window size for the default cell size (varsayılan hücre boyutu için istenen boyut) */
+    /* Desired window size for the default cell size */
     RECT rc = {0, 0, COLS * DEF_CELL, ROWS * DEF_CELL};
     AdjustWindowRectEx(&rc, winStyle, TRUE, 0);
     int win_w = rc.right  - rc.left;
     int win_h = rc.bottom - rc.top;
 
-    /* Clamp with a small margin so the window fits on screen (ekrana sığdır) */
+    /* Clamp with a small margin so the window fits on screen */
     if (win_w > wa_w - 40) win_w = wa_w - 40;
     if (win_h > wa_h - 40) win_h = wa_h - 40;
 
-    /* Center on work area (çalışma alanında ortala) */
+    /* Center on work area */
     int win_x = wa.left + (wa_w - win_w) / 2;
     int win_y = wa.top  + (wa_h - win_h) / 2;
 
@@ -608,14 +602,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrev, PWSTR pCmd, int nCmdSh
 
     SetMenu(mainWindow, create_menu());
 
-    /* Initialize button array (buton dizisini sıfırla) */
+    /* Initialize button array */
     for (int r = 0; r < MAX_ROWS; r++)
         for (int c = 0; c < MAX_COLS; c++)
             buttons[r][c] = NULL;
 
     rebuild_buttons();
 
-    /* Run first layout pass with the actual client size (gerçek istemci boyutuyla ilk düzeni çalıştır) */
+    /* Run first layout pass with the actual client size */
     RECT cr; GetClientRect(mainWindow, &cr);
     relayout(cr.right, cr.bottom);
 

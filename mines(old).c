@@ -95,7 +95,7 @@ void set_button_text_number(HWND btn, int n) {
 void check_win(void) {
     int totalCells = ROWS * COLS;
     if (revealedCount == totalCells - MINES) {
-        MessageBoxW(mainWindow, L"Tebrikler — kazandın!", L"Win", MB_OK | MB_ICONINFORMATION);
+        MessageBoxW(mainWindow, L"Congratulations, you won!", L"Win", MB_OK | MB_ICONINFORMATION);
         for (int i = 0; i < ROWS; ++i)
             for (int j = 0; j < COLS; ++j)
                 EnableWindow(buttons[i][j], FALSE);
@@ -129,7 +129,7 @@ void reveal_cell(int r, int c) {
     if (mines[r][c]) {
         SetWindowTextW(btn, L"*");
         reveal_all_mines();
-        MessageBoxW(mainWindow, L"Mayına bastın! Oyun bitti.", L"Game Over", MB_OK | MB_ICONERROR);
+        MessageBoxW(mainWindow, L"You hit a mine! Game over.", L"Game Over", MB_OK | MB_ICONERROR);
         for (int i = 0; i < ROWS; ++i)
             for (int j = 0; j < COLS; ++j)
                 EnableWindow(buttons[i][j], FALSE);
